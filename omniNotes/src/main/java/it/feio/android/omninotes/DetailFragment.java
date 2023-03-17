@@ -454,9 +454,9 @@ public class DetailFragment extends BaseFragment implements OnReminderPickedList
     }
   }
 
-  private void handleIntents() {
+  // refactor : extrract first if : if (IntentChecker.checkAction(i, ACTION_MERGE))
+  private void checkIfActionMerge() {
     Intent i = mainActivity.getIntent();
-
     if (IntentChecker.checkAction(i, ACTION_MERGE)) {
       noteOriginal = new Note();
       note = new Note(noteOriginal);
@@ -465,8 +465,11 @@ public class DetailFragment extends BaseFragment implements OnReminderPickedList
         mergedNotesIds = i.getStringArrayListExtra("merged_notes");
       }
     }
+  }
 
-    // Action called from home shortcut
+  // refactor : extrract second if : if (IntentChecker.checkAction(i, ACTION_SHORTCUT, ACTION_NOTIFICATION_CLICK)) : checkIfItsLaunchFromShortcut
+  private void checkIfItsLaunchFromShortcut() {
+    Intent i = mainActivity.getIntent();
     if (IntentChecker.checkAction(i, ACTION_SHORTCUT, ACTION_NOTIFICATION_CLICK)) {
       afterSavedReturnsToList = false;
       noteOriginal = DbHelper.getInstance().getNote(i.getLongExtra(INTENT_KEY, 0));
@@ -479,7 +482,12 @@ public class DetailFragment extends BaseFragment implements OnReminderPickedList
         mainActivity.finish();
       }
     }
+  }
 
+// refactor : extrract third if : if (IntentChecker.checkAction(i, ACTION_WIDGET, ACTION_WIDGET_TAKE_PHOTO)) : checkIfItsLaunchFromWidget
+  private void checkIfItsLaunchFromWidget() {
+
+    Intent i = mainActivity.getIntent();
     // Check if is launched from a widget
     if (IntentChecker.checkAction(i, ACTION_WIDGET, ACTION_WIDGET_TAKE_PHOTO)) {
 
@@ -503,20 +511,30 @@ public class DetailFragment extends BaseFragment implements OnReminderPickedList
         }
       }
 
-      // Sub-action is to take a photo
-      if (IntentChecker.checkAction(i, ACTION_WIDGET_TAKE_PHOTO)) {
-        takePhoto();
-      }
-    }
 
-    if (IntentChecker.checkAction(i, ACTION_FAB_TAKE_PHOTO)) {
+      takePhotoWithCondtion();
+    }
+  }
+
+  private void takePhotoWithCondtion() {
+    Intent i = mainActivity.getIntent();
+    // Sub-action is to take a photo
+    if (IntentChecker.checkAction(i, ACTION_WIDGET_TAKE_PHOTO)) {
+      takePhoto();
+    } else if (IntentChecker.checkAction(i, ACTION_FAB_TAKE_PHOTO)) {
       takePhoto();
     }
+  }
+
+  // handle sharing request
+  private void handleSharingRequest() {
+    Intent i = mainActivity.getIntent();
 
     // Handles third party apps requests of sharing
+
     if (IntentChecker
-        .checkAction(i, Intent.ACTION_SEND, Intent.ACTION_SEND_MULTIPLE, INTENT_GOOGLE_NOW)
-        && i.getType() != null) {
+            .checkAction(i, Intent.ACTION_SEND, Intent.ACTION_SEND_MULTIPLE, INTENT_GOOGLE_NOW)
+            && i.getType() != null) {
 
       afterSavedReturnsToList = false;
 
@@ -539,12 +557,33 @@ public class DetailFragment extends BaseFragment implements OnReminderPickedList
       importAttachments(i);
 
     }
+  }
 
+  private void setShowKeyboardAccordingToIntent() {
+    Intent i = mainActivity.getIntent();
     if (IntentChecker
         .checkAction(i, Intent.ACTION_MAIN, ACTION_WIDGET_SHOW_LIST, ACTION_SHORTCUT_WIDGET,
             ACTION_WIDGET)) {
       showKeyboard = true;
     }
+  }
+
+  /**
+   * function to initializes the views
+   */
+
+  private void handleIntents() {
+    Intent i = mainActivity.getIntent();
+
+    checkIfActionMerge();
+    checkIfItsLaunchFromShortcut();
+    checkIfItsLaunchFromWidget();
+    takePhotoWithCondtion();
+
+    // Handles third party apps requests of sharing
+    handleSharingRequest();
+
+    setShowKeyboardAccordingToIntent();
 
     i.setAction(null);
   }
